@@ -49,7 +49,7 @@ def _call_gemini(messages: list, system: str = "", max_tokens: int = 1024) -> st
         max_output_tokens=max_tokens,
     )
     resp = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash",
         contents=contents,
         config=config,
     )
