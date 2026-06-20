@@ -88,6 +88,16 @@ class EmailLogDB(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class UserDB(Base):
+    __tablename__ = "users"
+    id = Column(String, primary_key=True)
+    email = Column(String, unique=True, index=True)
+    password_hash = Column(String)
+    name = Column(String)
+    role = Column(String, default="employee")  # admin | employee
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 def get_db():
     db = SessionLocal()
     try:
