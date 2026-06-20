@@ -1,14 +1,17 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from app.database import init_db
+from app.database import init_db, get_db, CandidateDB
+from app.dependencies import get_current_user
 from app.routes.ai_routes import router as ai_router
 from app.routes.candidate_routes import router as candidate_router
 from app.routes.email_routes import router as email_router
+from app.routes.auth_routes import router as auth_router
 
 app = FastAPI(
     title="HR Management API",
@@ -23,6 +26,7 @@ app.add_middleware(
         "http://localhost:3000",
         "https://hr-management-main-tau.vercel.app",
     ],
+    allow_origin_regex=r"https://hr-management-main-.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,6 +35,7 @@ app.add_middleware(
 app.include_router(ai_router)
 app.include_router(candidate_router)
 app.include_router(email_router)
+app.include_router(auth_router)
 
 
 @app.on_event("startup")
@@ -51,11 +56,13 @@ async def health():
 
 
 @app.get("/api/analytics/overview")
-async def analytics_overview():
+async def analytics_overview(db: Session = Depends(get_db), _user=Depends(get_current_user)):
+    total_candidates = db.query(CandidateDB).count()
+    hired = db.query(CandidateDB).filter(CandidateDB.stage == "hired").count()
     return {
         "totalPositions": 12,
-        "totalCandidates": 284,
-        "hired": 23,
+        "totalCandidates": total_candidates,
+        "hired": hired,
         "timeToHire": 28,
         "timeToFill": 45,
         "offerAcceptanceRate": 84,

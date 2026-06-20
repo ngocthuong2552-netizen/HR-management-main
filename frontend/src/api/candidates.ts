@@ -1,4 +1,5 @@
 import API_BASE from './config';
+import { authHeader } from './auth';
 
 export interface CandidateAPI {
   id: string;
@@ -59,14 +60,14 @@ export async function listCandidates(params: { stage?: string; search?: string }
   if (params.stage) qs.set('stage', params.stage);
   if (params.search) qs.set('search', params.search);
   qs.set('limit', '500');
-  const res = await fetch(`${API_BASE}/api/candidates/?${qs.toString()}`);
+  const res = await fetch(`${API_BASE}/api/candidates/?${qs.toString()}`, { headers: authHeader() });
   return handle(res);
 }
 
 export async function createCandidate(payload: Partial<CandidateAPI>): Promise<CandidateAPI> {
   const res = await fetch(`${API_BASE}/api/candidates/`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeader() },
     body: JSON.stringify(payload),
   });
   return handle(res);
@@ -75,19 +76,19 @@ export async function createCandidate(payload: Partial<CandidateAPI>): Promise<C
 export async function updateCandidate(id: string, payload: Partial<CandidateAPI>): Promise<CandidateAPI> {
   const res = await fetch(`${API_BASE}/api/candidates/${id}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeader() },
     body: JSON.stringify(payload),
   });
   return handle(res);
 }
 
 export async function deleteCandidate(id: string): Promise<{ ok: boolean }> {
-  const res = await fetch(`${API_BASE}/api/candidates/${id}`, { method: 'DELETE' });
+  const res = await fetch(`${API_BASE}/api/candidates/${id}`, { method: 'DELETE', headers: authHeader() });
   return handle(res);
 }
 
 export async function getEmailTemplates(): Promise<{ templates: EmailTemplate[] }> {
-  const res = await fetch(`${API_BASE}/api/candidates/email-templates`);
+  const res = await fetch(`${API_BASE}/api/candidates/email-templates`, { headers: authHeader() });
   return handle(res);
 }
 
@@ -97,7 +98,7 @@ export async function previewEmail(
 ): Promise<{ subject: string; body: string }> {
   const res = await fetch(`${API_BASE}/api/candidates/${candidateId}/emails/preview`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeader() },
     body: JSON.stringify(payload),
   });
   return handle(res);
@@ -109,13 +110,13 @@ export async function sendEmail(
 ): Promise<EmailLog> {
   const res = await fetch(`${API_BASE}/api/candidates/${candidateId}/emails`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeader() },
     body: JSON.stringify(payload),
   });
   return handle(res);
 }
 
 export async function getEmailHistory(candidateId: string): Promise<EmailLog[]> {
-  const res = await fetch(`${API_BASE}/api/candidates/${candidateId}/emails`);
+  const res = await fetch(`${API_BASE}/api/candidates/${candidateId}/emails`, { headers: authHeader() });
   return handle(res);
 }

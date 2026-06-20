@@ -1,10 +1,11 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, GitBranch, Star, Briefcase, ClipboardList,
   BarChart3, BookOpen, Map, Bot, Brain, FileSearch, MessageSquare,
-  ChevronDown, ChevronRight, Building2, Wand2
+  ChevronDown, ChevronRight, Building2, Wand2, LogOut
 } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 interface NavItem {
   label: string;
@@ -93,6 +94,8 @@ function NavGroup({ item }: { item: NavItem }) {
 }
 
 export default function Sidebar() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   return (
     <aside className="w-60 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0 overflow-y-auto">
       {/* Logo */}
@@ -139,14 +142,23 @@ export default function Sidebar() {
 
       {/* User */}
       <div className="px-3 py-3 border-t border-gray-100">
-        <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+        <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50">
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-            HR
+            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">HR Admin</p>
-            <p className="text-xs text-gray-400 truncate">hr@company.vn</p>
+            <p className="text-sm font-medium text-gray-900 truncate">{user?.name || 'Người dùng'}</p>
+            <p className="text-xs text-gray-400 truncate">
+              {user?.email} {user?.role === 'admin' ? '• Quản lý' : '• Nhân viên'}
+            </p>
           </div>
+          <button
+            onClick={() => { logout(); navigate('/login'); }}
+            title="Đăng xuất"
+            className="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 flex-shrink-0"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </div>
     </aside>

@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db, CandidateDB, EmailLogDB
 from app.services import email_service
+from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/api/candidates", tags=["Emails"])
 
@@ -38,7 +39,7 @@ def get_templates():
 
 
 @router.post("/{candidate_id}/emails/preview")
-def preview_email(candidate_id: str, req: PreviewEmailRequest, db: Session = Depends(get_db)):
+def preview_email(candidate_id: str, req: PreviewEmailRequest, db: Session = Depends(get_db), _user=Depends(get_current_user)):
     c = db.query(CandidateDB).filter(CandidateDB.id == candidate_id).first()
     if not c:
         raise HTTPException(404, "Candidate not found")
@@ -53,7 +54,7 @@ def preview_email(candidate_id: str, req: PreviewEmailRequest, db: Session = Dep
 
 
 @router.post("/{candidate_id}/emails")
-def send_email_to_candidate(candidate_id: str, req: SendEmailRequest, db: Session = Depends(get_db)):
+def send_email_to_candidate(candidate_id: str, req: SendEmailRequest, db: Session = Depends(get_db), _user=Depends(get_current_user)):
     c = db.query(CandidateDB).filter(CandidateDB.id == candidate_id).first()
     if not c:
         raise HTTPException(404, "Candidate not found")
@@ -90,7 +91,7 @@ def send_email_to_candidate(candidate_id: str, req: SendEmailRequest, db: Sessio
 
 
 @router.get("/{candidate_id}/emails")
-def get_email_history(candidate_id: str, db: Session = Depends(get_db)):
+def get_email_history(candidate_id: str, db: Session = Depends(get_db), _user=Depends(get_current_user)):
     c = db.query(CandidateDB).filter(CandidateDB.id == candidate_id).first()
     if not c:
         raise HTTPException(404, "Candidate not found")

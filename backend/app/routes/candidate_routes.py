@@ -6,6 +6,7 @@ import uuid
 from datetime import date
 
 from app.database import get_db, CandidateDB
+from app.dependencies import get_current_user, require_admin
 
 router = APIRouter(prefix="/api/candidates", tags=["Candidates"])
 
@@ -37,7 +38,8 @@ def list_candidates(
     stage: Optional[str] = None,
     search: Optional[str] = None,
     limit: int = 100,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _user=Depends(get_current_user),
 ):
     query = db.query(CandidateDB)
     if stage:
@@ -51,7 +53,7 @@ def list_candidates(
 
 
 @router.post("/")
-def create_candidate(data: CandidateCreate, db: Session = Depends(get_db)):
+def create_candidate(data: CandidateCreate, db: Session = Depends(get_db), _user=Depends(get_current_user)):
     candidate = CandidateDB(
         id=str(uuid.uuid4()),
         applied_date=str(date.today()),
@@ -64,7 +66,7 @@ def create_candidate(data: CandidateCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/{candidate_id}")
-def get_candidate(candidate_id: str, db: Session = Depends(get_db)):
+def get_candidate(candidate_id: str, db: Session = Depends(get_db), _user=Depends(get_current_user)):
     c = db.query(CandidateDB).filter(CandidateDB.id == candidate_id).first()
     if not c:
         raise HTTPException(404, "Candidate not found")
@@ -72,7 +74,7 @@ def get_candidate(candidate_id: str, db: Session = Depends(get_db)):
 
 
 @router.patch("/{candidate_id}")
-def update_candidate(candidate_id: str, data: CandidateUpdate, db: Session = Depends(get_db)):
+def update_candidate(candidate_id: str, data: CandidateUpdate, db: Session = Depends(get_db), _user=Depends(get_current_user)):
     c = db.query(CandidateDB).filter(CandidateDB.id == candidate_id).first()
     if not c:
         raise HTTPException(404, "Candidate not found")
@@ -83,7 +85,7 @@ def update_candidate(candidate_id: str, data: CandidateUpdate, db: Session = Dep
 
 
 @router.delete("/{candidate_id}")
-def delete_candidate(candidate_id: str, db: Session = Depends(get_db)):
+def delete_candidate(candidate_id: str, db: Session = Depends(get_db), _admin=Depends(require_admin)):
     c = db.query(CandidateDB).filter(CandidateDB.id == candidate_id).first()
     if not c:
         raise HTTPException(404, "Candidate not found")
@@ -93,7 +95,7 @@ def delete_candidate(candidate_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/stats/pipeline")
-def pipeline_stats(db: Session = Depends(get_db)):
+def pipeline_stats(db: Session = Depends(get_db), _user=Depends(get_current_user)):
     stages = ['applied', 'cv_screening', 'hr_interview', 'technical_interview',
               'manager_interview', 'offer', 'hired', 'rejected']
     return {s: db.query(CandidateDB).filter(CandidateDB.stage == s).count() for s in stages}
