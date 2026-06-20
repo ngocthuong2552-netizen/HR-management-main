@@ -1,13 +1,53 @@
+iimport { useEffect, useState } from 'react';
 import { Users, Briefcase, UserCheck, Clock, TrendingUp, Target, BookOpen, Bot } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 import Header from '../components/layout/Header';
 import StatsCard from '../components/ui/StatsCard';
-import { mockMetrics, funnelData, monthlyHiringData, departmentData, sourceData, mockCandidates, mockJobs } from '../data/mockData';
+import { funnelData, monthlyHiringData, departmentData, sourceData, mockJobs } from '../data/mockData';
 import { StageBadge } from '../components/ui/Badge';
+import { listCandidates, type CandidateAPI } from '../api/candidates';
+import { authHeader } from '../api/auth';
+import API_BASE from '../api/config';
+import type { PipelineStage } from '../types';
+
+interface Overview {
+  totalPositions: number;
+  totalCandidates: number;
+  hired: number;
+  timeToHire: number;
+  timeToFill: number;
+  offerAcceptanceRate: number;
+  interviewToHireRatio: number;
+}
 
 export default function Dashboard() {
-  const recentCandidates = mockCandidates.slice(0, 5);
+  const [overview, setOverview] = useState<Overview | null>(null);
+  const [recentCandidates, setRecentCandidates] = useState<CandidateAPI[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const openJobs = mockJobs.filter(j => j.status === 'open').length;
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [overviewRes, candidates] = await Promise.all([
+          fetch(`${API_BASE}/api/analytics/overview`, { headers: authHeader() }).then(r => r.json()),
+          listCandidates(),
+        ]);
+        setOverview(overviewRes);
+        setRecentCandidates(
+          [...candidates]
+            .sort((a, b) => (a.applied_date < b.applied_date ? 1 : -1))
+            .slice(0, 5)
+        );
+      } catch (e) {
+        console.error('Failed to load dashboard data', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
 
   return (
     <div>
@@ -17,19 +57,19 @@ export default function Dashboard() {
         {/* Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatsCard
-            title="Vị trí đang tuyển" value={openJobs} subtitle={`${mockMetrics.totalPositions} tổng vị trí`}
+            title="Vị trí đang tuyển" value={openJobs} subtitle={`${overview?.totalPositions ?? '–'} tổng vị trí`}
             icon={<Briefcase size={20} className="text-blue-600" />} iconBg="bg-blue-50" trend={8}
           />
           <StatsCard
-            title="Tổng ứng viên" value={mockMetrics.totalCandidates} subtitle="Đang trong pipeline"
+            title="Tổng ứng viên" value={loading ? '...' : overview?.totalCandidates ?? 0} subtitle="Đang trong pipeline"
             icon={<Users size={20} className="text-purple-600" />} iconBg="bg-purple-50" trend={15}
           />
           <StatsCard
-            title="Đã tuyển dụng" value={mockMetrics.hired} subtitle="Tháng 6/2026"
+            title="Đã tuyển dụng" value={loading ? '...' : overview?.hired ?? 0} subtitle="Tháng 6/2026"
             icon={<UserCheck size={20} className="text-green-600" />} iconBg="bg-green-50" trend={12}
           />
           <StatsCard
-            title="Thời gian tuyển TB" value={`${mockMetrics.timeToHire} ngày`} subtitle="Time-to-Hire"
+            title="Thời gian tuyển TB" value={`${overview?.timeToHire ?? '–'} ngày`} subtitle="Time-to-Hire"
             icon={<Clock size={20} className="text-orange-600" />} iconBg="bg-orange-50" trend={-5} trendLabel="cải thiện"
           />
         </div>
@@ -37,11 +77,11 @@ export default function Dashboard() {
         {/* Second Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatsCard
-            title="Offer Acceptance" value={`${mockMetrics.offerAcceptanceRate}%`}
+            title="Offer Acceptance" value={`${overview?.offerAcceptanceRate ?? '–'}%`}
             icon={<Target size={20} className="text-indigo-600" />} iconBg="bg-indigo-50" trend={3}
           />
           <StatsCard
-            title="Interview/Hire Ratio" value={`${mockMetrics.interviewToHireRatio}:1`}
+            title="Interview/Hire Ratio" value={`${overview?.interviewToHireRatio ?? '–'}:1`}
             icon={<TrendingUp size={20} className="text-pink-600" />} iconBg="bg-pink-50"
           />
           <StatsCard
@@ -124,6 +164,9 @@ export default function Dashboard() {
               <a href="/ats/candidates" className="text-xs text-blue-600 hover:underline">Xem tất cả →</a>
             </div>
             <div className="space-y-3">
+              {recentCandidates.length === 0 && !loading && (
+                <p className="text-sm text-gray-400">Chưa có ứng viên nào</p>
+              )}
               {recentCandidates.map(c => (
                 <div key={c.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
@@ -133,7 +176,7 @@ export default function Dashboard() {
                     <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
                     <p className="text-xs text-gray-500 truncate">{c.position}</p>
                   </div>
-                  <StageBadge stage={c.stage} />
+                  <StageBadge stage={c.stage as PipelineStage} />
                 </div>
               ))}
             </div>
