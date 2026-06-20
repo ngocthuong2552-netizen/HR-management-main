@@ -26,6 +26,7 @@ app.add_middleware(
         "http://localhost:3000",
         "https://hr-management-main-tau.vercel.app",
     ],
+    allow_origin_regex=r"https://hr-management-main-.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
