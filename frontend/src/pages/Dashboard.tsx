@@ -1,4 +1,4 @@
-iimport { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Users, Briefcase, UserCheck, Clock, TrendingUp, Target, BookOpen, Bot } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 import Header from '../components/layout/Header';
